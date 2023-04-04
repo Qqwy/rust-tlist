@@ -8,7 +8,7 @@ and manipulate them in generic ways, like looking at the first type in a list, c
 
 
 
-The easiest way to build a TList is to use the [TList!] macro:
+The easiest way to build a TList is to use the [TList!](https://docs.rs/tlist/latest/tlist/macro.TList.html) macro:
 
 ```rust
 use tlist::*;
@@ -18,8 +18,8 @@ type MyList = TList![String, usize, bool];
 
 ## Type-level functions
 
-Manipulation of a [trait@TList] is done by using one of the many type aliases defined in the crate.
-These are nice and readable aliases that internally use one of the many generic associated types (GATs) which are part of the definitions of the [trait@TList] and [NonEmpty] traits.
+Manipulation of a [trait@TList](https://docs.rs/tlist/latest/tlist/trait.TList.html) is done by using one of the many type aliases defined in the crate.
+These are nice and readable aliases that internally use one of the many generic associated types (GATs) which are part of the definitions of the [TList](https://docs.rs/tlist/latest/tlist/trait.TList.html) and [NonEmpty](https://docs.rs/tlist/latest/tlist/trait.NonEmpty.html) traits.
 
 You can think of these type aliases as the type-level version of functions. Instead of normal functions, they run at compile time, on the type level:
 
@@ -38,7 +38,7 @@ assert_type_eq!(MoreThings, TList![String, usize, bool, u8, u8, u8]);
 ```
 
 This means that you can use them inside the `where` clauses of any types, traits or (normal) functions you define.
-TList implements [Default] wich makes it very easy to add it as a field to a struct or enum.
+TList implements [Default](https://doc.rust-lang.org/core/default/trait.Default.html) wich makes it very easy to add it as a field to a struct or enum.
 (It is a [ZST](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts) so it takes up no size at runtime).
 
 ```rust
@@ -70,7 +70,7 @@ As such, you only ever need this one bound, making it much more ergonomic to use
 
 ## Compile-time safety
 
-Attempting to do operations only defined on [NonEmpty] TLists on [Empty] TLists
+Attempting to do operations only defined on [NonEmpty](https://docs.rs/tlist/latest/tlist/trait.NonEmpty.html) TLists on [Empty](https://docs.rs/tlist/latest/tlist/trait.Empty.html) TLists
 results in an error at compile time:
 
 ```compile_fail
@@ -88,7 +88,7 @@ And similarly for other 'partial' operations.
 
 ## Efficiency
 
-[trait@TList]'s two constructors, [TNil] and [TCons] are both zero-size types ([ZSTs](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)).
+[trait@TList]'s two constructors, [TNil](https://docs.rs/tlist/latest/tlist/struct.TNil.html) and [TCons](https://docs.rs/tlist/latest/tlist/struct.TCons.html) are both zero-size types ([ZSTs](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)).
 This means that any TList will be zero size as well and disappear completely before your program runs.
 
 Because all of the calculations happen at compile-time, the runtime of your program is not affected at all.
@@ -106,4 +106,4 @@ TList's Minimum Supported Rust Version is 1.65: The implementation makes pervasi
 
 ### Dependencies
 
-The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len]) and for type-level booleans (c.f. [IsEmpty]).
+The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len](https://docs.rs/tlist/latest/tlist/type.Len.html) and for type-level booleans (c.f. [IsEmpty](https://docs.rs/tlist/latest/tlist/type.IsEmpty.html)).
