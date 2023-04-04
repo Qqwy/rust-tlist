@@ -30,30 +30,62 @@ pub trait TListImpl {
 }
 
 /// Type-level lists.
+///
+/// This trait is a "type-level enum".
+/// [trait@TList], [TNil] and [TCons] are the type-level equivalent of the following value-level enum:
+///
+/// ```ignore
+/// pub enum List<H, T> {
+///   Nil,
+///   Cons(H, T),
+/// }
+/// ```
+///
+/// This trait can be considered a 'marker' trait:
+/// It has no methods to be called at runtime.
+/// It only has some GATs.
+///
+/// Rather than calling these GATs directly,
+/// it is recommended to instead use their type aliases,
+/// as calling those is less verbose:
+///
+/// ```rust
+/// use tlist::*;
+///
+/// // This is possible...
+/// type Fine = <TList![u8, u16] as TList>::Concat<TList![u32, u64]>;
+///
+/// // But this is more readable:
+/// type Nice = Concat<TList![u8, u16], TList![u32, u64]>;
+///
+/// static_assertions::assert_type_eq_all!(Fine, Nice);
+/// ```
 pub trait TList: Sealed + TListImpl {
     /// Implementation of [type@Concat].
     type Concat<Rhs: TList>: TList;
+
     /// Implementation of [type@Reverse].
     type Reverse: TList;
+
     /// Implementation of [type@IsEmpty].
     type IsEmpty: Bit;
 
+    /// Implementation of [type@Len].
     type Len: UnsignedExt;
 }
 
-/// The empty type-level list.
+/// The empty [trait@TList].
 ///
 /// Only [TNil] implements this constraining trait.
-///
-/// See also [IsEmpty] if you want to .
 ///
 /// See also [IsEmpty] if you want work with both [Empty] and [NonEmpty]
 /// lists generically.
 pub trait Empty: TList + Sealed {}
 
-/// Non-empty type-level lists.
+/// Non-empty [trait@TList]s.
 ///
 /// Any [trait@TList] except [TNil] implements this constraining trait.
+/// (In other words: Any [`TCons<H, T>`], regardless of what `H` or `T` it contains, implements it.)
 ///
 /// Quite a number of operations are only defined for non-empty [trait@TList]s,
 /// so this constraint is used a lot in the library itself as well.
@@ -92,6 +124,7 @@ impl TList for TNil {
     type IsEmpty = B1;
     type Len = U0;
 }
+
 impl Empty for TNil {}
 
 impl<H, T: TList> TListImpl for TCons<H, T> {
@@ -111,9 +144,6 @@ impl<H, T: TList> NonEmpty for TCons<H, T> {
     type Last = T::Last<H>;
     type Inits = T::Inits<H>;
 }
-
-#[macro_export]
-// Implementation based on the frunk crate's HList! macro.
 
 /// Shorthand macro to construct TList types.
 ///
@@ -136,6 +166,8 @@ impl<H, T: TList> NonEmpty for TCons<H, T> {
 /// type Rest = TList![U3, U4];
 /// type_eq!(TList![U1, U2, ...Rest], TCons<U1, TCons<U2, Rest>>);
 /// ```
+#[macro_export]
+// Implementation based on the frunk crate's HList! macro.
 macro_rules! TList {
     () => { $crate::TNil };
     (...$Rest:ty) => { $Rest };
@@ -223,6 +255,17 @@ pub type Inits<List> = <List as NonEmpty>::Inits;
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
 
 /// Type-level 'function' to reverse a TList.
+///
+/// ```rust
+/// use tlist::*;
+/// use typenum::consts::{U1, U2, U3, U4, U5};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
+///
+/// assert_type_eq!(Reverse<TList![]>, TList![]);
+///
+/// assert_type_eq!(Reverse<TList![U3, U2, U1]>, TList![U1, U2, U3]);
+/// ```
+///
 pub type Reverse<List> = <List as TList>::Reverse;
 
 use typenum::consts::U0;
