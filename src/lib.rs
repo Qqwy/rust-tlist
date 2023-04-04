@@ -20,7 +20,13 @@ mod sealed {
 }
 use sealed::Sealed;
 
-pub trait TList: Sealed {
+pub trait TListImpl {
+    type Last<X>;
+    type Inits<X>: TList;
+}
+
+pub trait TList: Sealed + TListImpl
+{
     type Concat<Rhs: TList>: TList;
     type Reverse: TList;
     type IsEmpty: Bit;
@@ -29,8 +35,8 @@ pub trait TList: Sealed {
 pub trait NonEmpty: Sealed {
     type First;
     type Rest: TList;
-    // type Inits: TList;
-    // type Last;
+    type Last;
+    type Inits: TList;
 }
 
 /// The empty TList.
@@ -45,13 +51,22 @@ pub struct TCons<H, T: TList>(PhantomData<(H, T)>);
 impl Sealed for TNil {}
 impl<H, T: TList> Sealed for TCons<H, T> {}
 
+impl TListImpl for TNil {
+    type Last<X> = X;
+    type Inits<X> = TNil;
+}
 impl TList for TNil {
     type Concat<Rhs: TList> = Rhs;
     type Reverse = TNil;
     type IsEmpty = B1;
 }
 
-impl<H, T: TList> TList for TCons<H, T> {
+impl<H, T: TList> TListImpl for TCons<H, T> {
+    type Last<X> = T::Last<H>;
+    type Inits<X> = TCons<X, T::Inits<H>>;
+}
+impl<H, T: TList> TList for TCons<H, T>
+{
     type Concat<Rhs: TList> = TCons<H, T::Concat<Rhs>>;
     type Reverse = Concat<T::Reverse, TCons<H, TNil>>;
     type IsEmpty = B0;
@@ -60,6 +75,8 @@ impl<H, T: TList> TList for TCons<H, T> {
 impl<H, T: TList> NonEmpty for TCons<H, T> {
     type First = H;
     type Rest = T;
+    type Last = T::Last<H>;
+    type Inits = T::Inits<H>;
 }
 
 #[macro_export]
@@ -103,18 +120,7 @@ macro_rules! TList {
 ///
 /// static_assertions::assert_type_eq_all!(U1, First<TList![U1, U2]>);
 /// ```
-pub type First<List> = <List as TFirst>::Output;
-/// Implementation of [`First`].
-pub trait TFirst: TList {
-    type Output;
-}
-
-impl<H, Ts> TFirst for TCons<H, Ts>
-where
-    Ts: TList,
-{
-    type Output = H;
-}
+pub type First<List> = <List as NonEmpty>::First;
 
 /// Type-level 'function' to return the first element of a TList
 ///
@@ -126,58 +132,18 @@ where
 ///
 /// static_assertions::assert_type_eq_all!(TList![U2], Rest<TList![U1, U2]>);
 /// ```
-pub type Rest<List> = <List as TRest>::Output;
-/// Implementation of [`First`].
-pub trait TRest: TList {
-    type Output;
-}
-
-impl<H, Ts> TRest for TCons<H, Ts>
-where
-    Ts: TList,
-{
-    type Output = Ts;
-}
+pub type Rest<List> = <List as NonEmpty>::Rest;
 
 /// Type-level 'function' to return the all elements but the last element of a TList
 ///
 /// Only implemented for non-empty TLists.
-pub type Last<List> = <List as TLast>::Output;
-/// Implementation of [`Last`].
-pub trait TLast: TList {
-    type Output;
-}
-
-impl<H> TLast for TCons<H, TNil> {
-    type Output = H;
-}
-
-impl<H, Ts> TLast for TCons<H, Ts>
-where
-    Ts: TLast,
-{
-    type Output = Ts::Output;
-}
+pub type Last<List> = <List as NonEmpty>::Last;
 
 /// Type-level 'function' to return the all elements but the last element of a TList
 ///
 /// Only implemented for non-empty TLists.
-pub type Inits<List> = <List as TInits>::Output;
+pub type Inits<List> = <List as NonEmpty>::Inits;
 /// Implementation of [`Inits`].
-pub trait TInits: TList {
-    type Output: TList;
-}
-
-impl<H> TInits for TCons<H, TNil> {
-    type Output = TNil;
-}
-
-impl<H, Ts> TInits for TCons<H, Ts>
-where
-    Ts: TInits,
-{
-    type Output = TCons<H, Ts::Output>;
-}
 
 /// Type-level 'function' to concatenate two TLists.
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
@@ -192,23 +158,7 @@ use typenum::{Add1, Bit, Unsigned, B0, B1};
 /// You can turn the result into a `usize` using `Len<List>::USIZE` or `Len<List>::to_usize()`.
 ///
 /// (See [`typenum::Unsigned`].)
-pub type Len<List> = <List as TLen>::Output;
-pub trait TLen {
-    type Output: Unsigned;
-}
-
-impl TLen for TNil {
-    type Output = U0;
-}
-
-impl<H, T: TList> TLen for TCons<H, T>
-where
-    T: TLen,
-    Len<T>: Add<B1>,
-    Add1<Len<T>>: Unsigned,
-{
-    type Output = Add1<Len<T>>;
-}
+// pub type Len<List> = <List as TList>::Len;
 
 /// Type-level 'function' returning [`typenum::B1`] when the list is empty; [`typenum::B0`] otherwise.
 ///
@@ -228,60 +178,61 @@ pub type IsEmpty<List> = <List as TList>::IsEmpty;
 /// static_assertions::assert_impl_all!(TList![U1, U2]: Prefix<TList![U1, U2, U3, U4]>);
 /// static_assertions::assert_not_impl_any!(TList![U42]: Prefix<TList![U1, U2, U3, U4]>);
 /// ```
-pub trait Prefix<Other: TList> {}
+// pub trait Prefix<Other: TList> {}
 
-// prefix [] _ = true
-impl<Other: TList> Prefix<Other> for TNil {}
+// // prefix [] _ = true
+// impl<Other: TList> Prefix<Other> for TNil {}
 
-// prefix (h : ls) (h : rs) == prefix ls rs
-impl<H, Ls: TList, Rs: TList> Prefix<TCons<H, Rs>> for TCons<H, Ls> where Ls: Prefix<Rs> {}
+// // prefix (h : ls) (h : rs) == prefix ls rs
+// impl<H, Ls: TList, Rs: TList> Prefix<TCons<H, Rs>> for TCons<H, Ls> where Ls: Prefix<Rs> {}
 
-pub trait Compatible<Other: TList> {}
-// compatible [] [] == true
-impl Compatible<TNil> for TNil {}
+// pub trait Compatible<Other: TList> {}
+// // compatible [] [] == true
+// impl Compatible<TNil> for TNil {}
 
-// compatible [] (f : gs) == true
-impl<F, GS: TList> Compatible<TCons<F, GS>> for TNil {}
+// // compatible [] (f : gs) == true
+// impl<F, GS: TList> Compatible<TCons<F, GS>> for TNil {}
 
-// compatible (f : fs) [] == true
-impl<F, FS: TList> Compatible<TNil> for TCons<F, FS> {}
+// // compatible (f : fs) [] == true
+// impl<F, FS: TList> Compatible<TNil> for TCons<F, FS> {}
 
-// compatible (f : fs) (g : gs) == true
-impl<F, FS: TList, GS: TList> Compatible<TCons<F, GS>> for TCons<F, FS> where FS: Compatible<GS> {}
+// // compatible (f : fs) (g : gs) == true
+// impl<F, FS: TList, GS: TList> Compatible<TCons<F, GS>> for TCons<F, FS> where FS: Compatible<GS> {}
 
 #[cfg(test)]
 pub mod tests {
     // Since all of this is type-level code,
     // these tests run at compile-time.
     use super::*;
-    use static_assertions::assert_type_eq_all;
+    use static_assertions::assert_type_eq_all as assert_type_eq;
     use typenum::consts::*;
 
     // First:
-    assert_type_eq_all!(U1, First<TList![U1, U2]>);
+    assert_type_eq!(U1, First<TList![U1, U2]>);
 
     // Rest:
-    assert_type_eq_all!(TList![U2], Rest<TList![U1, U2]>);
+    assert_type_eq!(TList![U2], Rest<TList![U1, U2]>);
 
     // Last:
-    assert_type_eq_all!(U2, Last<TList![U1, U2]>);
+    assert_type_eq!(U2, Last<TList![U1, U2]>);
+    assert_type_eq!(U1, Last<TList![U1]>);
 
     // Inits:
-    assert_type_eq_all!(TList![U1, U2], Inits<TList![U1, U2, U3]>);
-    assert_type_eq_all!(TList![], Inits<TList![U10]>);
+    assert_type_eq!(TList![U1, U2], Inits<TList![U1, U2, U3]>);
+    assert_type_eq!(TList![], Inits<TList![U10]>);
 
     // Concat:
-    assert_type_eq_all!(TList![U1, U2, U3], Concat<TList![U1], TList![U2, U3]>);
+    assert_type_eq!(TList![U1, U2, U3], Concat<TList![U1], TList![U2, U3]>);
 
     // Reverse:
-    assert_type_eq_all!(TCons<U3, TCons<U2, TCons<U1, TNil>>>, Reverse<TCons<U1, TCons<U2, TCons<U3, TNil>>>>);
+    assert_type_eq!(TCons<U3, TCons<U2, TCons<U1, TNil>>>, Reverse<TCons<U1, TCons<U2, TCons<U3, TNil>>>>);
 
-    // Len:
-    assert_type_eq_all!(U0, Len<TList![]>);
-    assert_type_eq_all!(U1, Len<TList![usize]>);
-    assert_type_eq_all!(U2, Len<TList![i32, usize]>);
+    // // Len:
+    // assert_type_eq!(U0, Len<TList![]>);
+    // assert_type_eq!(U1, Len<TList![usize]>);
+    // assert_type_eq!(U2, Len<TList![i32, usize]>);
 
     // IsEmpty:
-    assert_type_eq_all!(B1, IsEmpty<TList![]>);
-    assert_type_eq_all!(B0, IsEmpty<TList![i32]>);
+    assert_type_eq!(B1, IsEmpty<TList![]>);
+    assert_type_eq!(B0, IsEmpty<TList![i32]>);
 }
