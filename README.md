@@ -74,6 +74,8 @@ assert_type_eq!(Boom, u8); // <- Compile error: Trait NonEmpty is not implemente
 _Note that the compile error only happens on the second line, where we look at the output.
 Rust performs type expansion lazily, so if you never use an 'impossible' result the compiler does not complain._
 
+And similarly for other 'partial' operations.
+
 ## Efficiency
 
 [trait@TList]'s two constructors, [TNil] and [TCons] are both zero-size types ([ZSTs](https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)).
@@ -91,3 +93,7 @@ No features need to be disabled to turn on `no_std` support.
 ### MSRV
 
 TList's Minimum Supported Rust Version is 1.65: The implementation makes pervasive use of GATs.
+
+### Dependencies
+
+The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len]) and for type-level booleans (c.f. [IsEmpty]).
