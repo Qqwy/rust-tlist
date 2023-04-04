@@ -57,6 +57,16 @@ let foo = MyStruct::<TList![usize, bool]> {
 println!("{:?}", foo);
 ```
 
+### Ergonomic
+
+Most other crates dealing with manipulation at the type-level introduce a new trait for each operation. The major disadvantage of this, is that each of these operations then forces an extra trait bound to be added wherever the operation is called from.
+
+This technique makes trait bounds hard to read. Furthermore it composes very badly, because any place using the struct, trait or function in which you've added the bound now _also_ needs that bound. And callers to those too... et cetera! 'Bounds hell'.
+
+In older versions of Rust, this was the only way to implement type-level operations. But since the stabilization of GATs (Generic associated types) in v1.65, this is no longer the case.
+
+TList implements all type-level operations as many GATs on the same trait.
+As such, you only ever need this one bound, making it much more ergonomic to use.
 
 ## Compile-time safety
 
