@@ -15,26 +15,51 @@
 use core::marker::PhantomData;
 use core::ops::Add;
 
-pub trait TList {
+mod sealed {
+    pub trait Sealed {}
+}
+use sealed::Sealed;
+
+pub trait TList: Sealed {
     type Concat<Rhs: TList>: TList;
     type Reverse: TList;
+    type IsEmpty: Bit;
+}
+
+pub trait NonEmpty: Sealed {
+    type First;
+    type Rest: TList;
+    // type Inits: TList;
+    // type Last;
 }
 
 /// The empty TList.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TNil;
 
+
 /// A non-empty TList whose first element is `H` and whose tail is the TList `T`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TCons<H, T: TList>(PhantomData<(H, T)>);
 
+impl Sealed for TNil {}
+impl<H, T: TList> Sealed for TCons<H, T> {}
+
 impl TList for TNil {
     type Concat<Rhs: TList> = Rhs;
     type Reverse = TNil;
+    type IsEmpty = B1;
 }
+
 impl<H, T: TList> TList for TCons<H, T> {
     type Concat<Rhs: TList> = TCons<H, T::Concat<Rhs>>;
     type Reverse = Concat<T::Reverse, TCons<H, TNil>>;
+    type IsEmpty = B0;
+}
+
+impl<H, T: TList> NonEmpty for TCons<H, T> {
+    type First = H;
+    type Rest = T;
 }
 
 #[macro_export]
@@ -157,40 +182,8 @@ where
 /// Type-level 'function' to concatenate two TLists.
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
 
-// pub trait TConcat<Rhs: TList>: TList {
-//     type Output: TList;
-// }
-
-// impl<Rhs: TList> TConcat<Rhs> for TNil {
-//     type Output = Rhs;
-// }
-
-// impl<H, T, Rhs: TList> TConcat<Rhs> for TCons<H, T>
-// where
-//     T: TConcat<Rhs>,
-// {
-//     type Output = TCons<H, Concat<T, Rhs>>;
-// }
-
 /// Type-level 'function' to reverse a TList.
 pub type Reverse<List> = <List as TList>::Reverse;
-
-// /// Implementation of [`Reverse`].
-// pub trait TReverse {
-//     type Output: TList;
-// }
-
-// impl TReverse for TNil {
-//     type Output = TNil;
-// }
-
-// impl<H, T> TReverse for TCons<H, T>
-// where
-//     T: TConcat<TCons<H, TNil>> + TReverse,
-//     Reverse<T>: TConcat<TCons<H, TNil>>,
-// {
-//     type Output = Concat<Reverse<T>, TCons<H, TNil>>;
-// }
 
 use typenum::consts::U0;
 use typenum::{Add1, Bit, Unsigned, B0, B1};
@@ -217,23 +210,12 @@ where
     type Output = Add1<Len<T>>;
 }
 
-/// Type-level 'function' returning [`B1`] when the list is empty; [`B0`] otherwise.
+/// Type-level 'function' returning [`typenum::B1`] when the list is empty; [`typenum::B0`] otherwise.
 ///
 /// You can turn the result into a `bool` using `IsEmpty<List>::BOOL` or `IsEmpty<List>::to_bool()`.
 ///
 /// (See [`typenum::Bit`].)
-pub type IsEmpty<List> = <List as TIsEmpty>::Output;
-pub trait TIsEmpty {
-    type Output: Bit;
-}
-
-impl TIsEmpty for TNil {
-    type Output = B1;
-}
-
-impl<H, T: TList> TIsEmpty for TCons<H, T> {
-    type Output = B0;
-}
+pub type IsEmpty<List> = <List as TList>::IsEmpty;
 
 /// Constraint which only holds if a TList is a prefix of `Other`.
 ///
