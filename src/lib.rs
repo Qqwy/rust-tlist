@@ -1,15 +1,15 @@
+#![doc = include_str!("../README.md")]
 //! TLists: Type-level linked lists.
 //!
 //! These are useful if you need to keep track of a _list_ of types inside your type,
 //! and manipulate them in generic ways (like taking the first type, reversing the list, etc.)
 //!
-//! In naperian, they are used to talk about the dimensions of the tensors (each dimension is a type-level number).
-//!
-//! The easiest way to use a TList is to use the [`TList!`] macro:
+//! The easiest way to build a TList is to use the [`TList!`] macro:
 //!
 //! ```rust
 //! use tlist::*;
 //! use typenum::consts::*;
+//!
 //! type MyList = TList![U10, U20, U100];
 //! ```
 
@@ -22,7 +22,6 @@ use sealed::Sealed;
 use typenum_ext::UnsignedExt;
 
 use core::marker::PhantomData;
-use core::ops::Add;
 
 #[doc(hidden)]
 pub trait TListImpl {
@@ -43,7 +42,25 @@ pub trait TList: Sealed + TListImpl
     type Len: UnsignedExt;
 }
 
+/// The empty type-level list.
+///
+/// Only [TNil] implements this constraining trait.
+///
+/// See also [IsEmpty] if you want to .
+///
+/// See also [IsEmpty] if you want work with both [Empty] and [NonEmpty]
+/// lists generically.
+pub trait Empty: TList + Sealed {}
+
 /// Non-empty type-level lists.
+///
+/// Any [trait@TList] except [TNil] implements this constraining trait.
+///
+/// Quite a number of operations are only defined for non-empty [trait@TList]s,
+/// so this constraint is used a lot in the library itself as well.
+///
+/// See also [IsEmpty] if you want work with both [Empty] and [NonEmpty]
+/// lists generically.
 pub trait NonEmpty: TList + Sealed {
     /// Implementation of [type@First].
     type First;
@@ -56,12 +73,12 @@ pub trait NonEmpty: TList + Sealed {
 }
 
 /// The empty TList.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TNil;
 
 
 /// A non-empty TList whose first element is `H` and whose tail is the TList `T`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TCons<H, T: TList>(PhantomData<(H, T)>);
 
 impl Sealed for TNil {}
@@ -77,6 +94,7 @@ impl TList for TNil {
     type IsEmpty = B1;
     type Len = U0;
 }
+impl Empty for TNil {}
 
 impl<H, T: TList> TListImpl for TCons<H, T> {
     type Last<X> = T::Last<H>;
@@ -223,7 +241,7 @@ pub type Len<List> = <List as TList>::Len;
 ///
 /// You can turn the result into a `bool` using `IsEmpty<List>::BOOL` or `IsEmpty<List>::to_bool()`.
 ///
-/// (See [`typenum::Bit`].)
+/// (See [`typenum::Bit`] for more on this.)
 /// ```rust
 /// use tlist::*;
 /// use typenum::{B0, B1, Bit};
@@ -236,6 +254,10 @@ pub type Len<List> = <List as TList>::Len;
 /// assert_eq!(IsEmpty::<TList![]>::BOOL, true);
 /// assert_eq!(IsEmpty::<TList![&'static str]>::BOOL, false);
 /// ```
+///
+/// [IsEmpty] is a type-level function that works for any [trait@TList], returning a type-level boolean.
+/// If you want to _constrain_ what kind of [trait@TList] is allowed for a certain operation,
+/// use the [Empty] or [NonEmpty] constraining traits.
 pub type IsEmpty<List> = <List as TList>::IsEmpty;
 
 /// Constraint which only holds if a TList is a prefix of `Other`.
