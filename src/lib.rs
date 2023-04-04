@@ -30,8 +30,7 @@ pub trait TListImpl {
 }
 
 /// Type-level lists.
-pub trait TList: Sealed + TListImpl
-{
+pub trait TList: Sealed + TListImpl {
     /// Implementation of [type@Concat].
     type Concat<Rhs: TList>: TList;
     /// Implementation of [type@Reverse].
@@ -76,7 +75,6 @@ pub trait NonEmpty: TList + Sealed {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TNil;
 
-
 /// A non-empty TList whose first element is `H` and whose tail is the TList `T`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TCons<H, T: TList>(PhantomData<(H, T)>);
@@ -100,8 +98,7 @@ impl<H, T: TList> TListImpl for TCons<H, T> {
     type Last<X> = T::Last<H>;
     type Inits<X> = TCons<X, T::Inits<H>>;
 }
-impl<H, T: TList> TList for TCons<H, T>
-{
+impl<H, T: TList> TList for TCons<H, T> {
     type Concat<Rhs: TList> = TCons<H, T::Concat<Rhs>>;
     type Reverse = Concat<T::Reverse, TCons<H, TNil>>;
     type IsEmpty = B0;

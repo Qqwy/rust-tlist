@@ -1,4 +1,4 @@
-use typenum::{Unsigned, Bit, UInt, UTerm, B0, B1};
+use typenum::{Bit, UInt, UTerm, Unsigned, B0, B1};
 pub trait BitExt: Bit {
     type UIntSucc<U: UnsignedExt>: UnsignedExt;
 }
