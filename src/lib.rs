@@ -229,7 +229,7 @@ pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
 pub type Reverse<List> = <List as TList>::Reverse;
 
 use typenum::consts::U0;
-use typenum::{Add1, Bit, Unsigned, B0, B1};
+use typenum::{Bit, B0, B1};
 /// Type-level 'function' to calculate the length of a TList.
 ///
 /// You can turn the result into a `usize` using `Len<List>::USIZE` or `Len<List>::to_usize()`.
