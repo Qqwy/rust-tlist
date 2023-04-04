@@ -350,7 +350,6 @@ impl<F, FS: TList> EitherPrefix<TNil> for TCons<F, FS> {}
 // eitherPrefix (f : fs) (g : gs) == true
 impl<F, FS: TList, GS: TList> EitherPrefix<TCons<F, GS>> for TCons<F, FS> where FS: EitherPrefix<GS> {}
 
-
 #[cfg(test)]
 pub mod tests {
     // Since all of this is type-level code,
@@ -396,7 +395,10 @@ pub mod tests {
         assert_type_eq!(U0, Len<TList![]>);
         assert_type_eq!(U1, Len<TList![usize]>);
         assert_type_eq!(U2, Len<TList![i32, usize]>);
-        assert_type_eq!(U10, Len<TList![char, char, char, char, char, char, char, char, char, char]>);
+        assert_type_eq!(
+            U10,
+            Len<TList![char, char, char, char, char, char, char, char, char, char]>
+        );
     }
 
     #[test]
