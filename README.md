@@ -1,4 +1,4 @@
-# TList &emsp; [![Latest Version]][crates.io] [![License]][license path]
+# TList &emsp; [![Latest Version]][crates.io] [![License]][license path] 
 
 
 [Latest Version]: https://img.shields.io/crates/v/tlist.svg
@@ -115,3 +115,7 @@ TList's Minimum Supported Rust Version is 1.65: The implementation makes pervasi
 ### Dependencies
 
 The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len](https://docs.rs/tlist/latest/tlist/type.Len.html)) and for type-level booleans (c.f. [IsEmpty](https://docs.rs/tlist/latest/tlist/type.IsEmpty.html)).
+
+### No unsafe
+
+This crate does not contain any unsafe code.

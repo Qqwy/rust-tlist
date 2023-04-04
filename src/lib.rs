@@ -12,6 +12,8 @@
 //!
 //! type MyList = TList![U10, U20, U100];
 //! ```
+#![forbid(unsafe_code)]
+#![no_std]
 
 mod typenum_ext;
 mod sealed {
