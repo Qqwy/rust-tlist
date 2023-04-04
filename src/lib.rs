@@ -12,13 +12,17 @@
 //! use typenum::consts::*;
 //! type MyList = TList![U10, U20, U100];
 //! ```
-use core::marker::PhantomData;
-use core::ops::Add;
 
+mod typenum_ext;
 mod sealed {
     pub trait Sealed {}
 }
 use sealed::Sealed;
+
+use typenum_ext::UnsignedExt;
+
+use core::marker::PhantomData;
+use core::ops::Add;
 
 #[doc(hidden)]
 pub trait TListImpl {
@@ -35,6 +39,8 @@ pub trait TList: Sealed + TListImpl
     type Reverse: TList;
     /// Implementation of [type@IsEmpty].
     type IsEmpty: Bit;
+
+    type Len: UnsignedExt;
 }
 
 /// Non-empty type-level lists.
@@ -69,6 +75,7 @@ impl TList for TNil {
     type Concat<Rhs: TList> = Rhs;
     type Reverse = TNil;
     type IsEmpty = B1;
+    type Len = U0;
 }
 
 impl<H, T: TList> TListImpl for TCons<H, T> {
@@ -80,6 +87,7 @@ impl<H, T: TList> TList for TCons<H, T>
     type Concat<Rhs: TList> = TCons<H, T::Concat<Rhs>>;
     type Reverse = Concat<T::Reverse, TCons<H, TNil>>;
     type IsEmpty = B0;
+    type Len = <T::Len as UnsignedExt>::Succ;
 }
 
 impl<H, T: TList> NonEmpty for TCons<H, T> {
@@ -104,7 +112,9 @@ impl<H, T: TList> NonEmpty for TCons<H, T> {
 /// use typenum::consts::{U1, U2, U3, U4, U42};
 ///
 /// type_eq!(TList![], TNil);
+///
 /// type_eq!(TList![U42], TCons<U42, TNil>);
+///
 /// type_eq!(TList![U1, U2, U3], TCons<U1, TCons<U2, TCons<U3, TNil>>>);
 ///
 /// // You can also use `...Rest` for the last argument:
@@ -126,9 +136,12 @@ macro_rules! TList {
 ///
 /// ```rust
 /// use tlist::*;
-/// use typenum::consts::{U1, U2};
+/// use typenum::consts::{U1, U2, U3};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
 ///
-/// static_assertions::assert_type_eq_all!(U1, First<TList![U1, U2]>);
+/// assert_type_eq!(First<TList![U1, U2, U3]>, U1);
+///
+/// assert_type_eq!(First<TList![i8, usize, i32, u64]>, i8);
 /// ```
 pub type First<List> = <List as NonEmpty>::First;
 
@@ -138,23 +151,59 @@ pub type First<List> = <List as NonEmpty>::First;
 ///
 /// ```rust
 /// use tlist::*;
-/// use typenum::consts::{U1, U2};
+/// use typenum::consts::{U1, U2, U3};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
 ///
-/// static_assertions::assert_type_eq_all!(TList![U2], Rest<TList![U1, U2]>);
+/// assert_type_eq!(Rest<TList![U1, U2, U3]>, TList![U2, U3]);
+///
+/// assert_type_eq!(Rest<TList![i8, usize, i32, u64]>, TList![usize, i32, u64]);
 /// ```
 pub type Rest<List> = <List as NonEmpty>::Rest;
 
 /// Type-level 'function' to return the all elements but the last element of a TList
 ///
 /// Only implemented for non-empty TLists.
+/// ```rust
+/// use tlist::*;
+/// use typenum::consts::{U1, U2, U3};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
+///
+/// assert_type_eq!(Last<TList![U1, U2, U3]>, U3);
+///
+/// assert_type_eq!(Last<TList![i8, usize, i32, u64]>, u64);
+/// ```
 pub type Last<List> = <List as NonEmpty>::Last;
 
 /// Type-level 'function' to return the all elements but the last element of a TList
 ///
 /// Only implemented for non-empty TLists.
+/// ```rust
+/// use tlist::*;
+/// use typenum::consts::{U1, U2, U3};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
+///
+/// assert_type_eq!(Inits<TList![U1, U2, U3]>, TList![U1, U2]);
+///
+/// assert_type_eq!(Inits<TList![i8, usize, i32, u64]>, TList![i8, usize, i32]);
+/// ```
 pub type Inits<List> = <List as NonEmpty>::Inits;
 
 /// Type-level 'function' to concatenate two TLists.
+///
+///
+/// ```rust
+/// use tlist::*;
+/// use typenum::consts::{U1, U2, U3, U4, U5};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
+///
+/// assert_type_eq!(Concat<TList![], TList![]>, TList![]);
+///
+/// assert_type_eq!(Concat<TList![U1], TList![]>, TList![U1]);
+///
+/// assert_type_eq!(Concat<TList![U2], TList![]>, TList![U2]);
+///
+/// assert_type_eq!(Concat<TList![U1, U2], TList![U3, U4, U5]>, TList![U1, U2, U3, U4, U5]);
+///
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
 
 /// Type-level 'function' to reverse a TList.
@@ -167,7 +216,7 @@ use typenum::{Add1, Bit, Unsigned, B0, B1};
 /// You can turn the result into a `usize` using `Len<List>::USIZE` or `Len<List>::to_usize()`.
 ///
 /// (See [`typenum::Unsigned`].)
-// pub type Len<List> = <List as TList>::Len;
+pub type Len<List> = <List as TList>::Len;
 
 /// Type-level 'function' returning [`typenum::B1`] when the list is empty; [`typenum::B0`] otherwise.
 ///
@@ -237,9 +286,9 @@ pub mod tests {
     assert_type_eq!(TCons<U3, TCons<U2, TCons<U1, TNil>>>, Reverse<TCons<U1, TCons<U2, TCons<U3, TNil>>>>);
 
     // // Len:
-    // assert_type_eq!(U0, Len<TList![]>);
-    // assert_type_eq!(U1, Len<TList![usize]>);
-    // assert_type_eq!(U2, Len<TList![i32, usize]>);
+    assert_type_eq!(U0, Len<TList![]>);
+    assert_type_eq!(U1, Len<TList![usize]>);
+    assert_type_eq!(U2, Len<TList![i32, usize]>);
 
     // IsEmpty:
     assert_type_eq!(B1, IsEmpty<TList![]>);
