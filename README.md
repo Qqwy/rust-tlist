@@ -1,6 +1,14 @@
-# TList
+# TList &emsp; [![Latest Version]][crates.io] [![License]][license path]
+
+
+[Latest Version]: https://img.shields.io/crates/v/tlist.svg
+[crates.io]: https://crates.io/crates/tlist
+[License]: https://img.shields.io/badge/license-MIT-blue.svg
+[license path]: https://github.com/qqwy/rust-tlist/blob/main/LICENSE
 
 Type-level linked lists for Rust.
+
+[Documentation](https://docs.rs/tlist/latest/)
 
 
 These are useful if you need to keep track of a _list_ of types inside your type,
@@ -18,7 +26,7 @@ type MyList = TList![String, usize, bool];
 
 ## Type-level functions
 
-Manipulation of a [trait@TList](https://docs.rs/tlist/latest/tlist/trait.TList.html) is done by using one of the many type aliases defined in the crate.
+Manipulation of a [TList](https://docs.rs/tlist/latest/tlist/trait.TList.html) is done by using one of the many type aliases defined in the crate.
 These are nice and readable aliases that internally use one of the many generic associated types (GATs) which are part of the definitions of the [TList](https://docs.rs/tlist/latest/tlist/trait.TList.html) and [NonEmpty](https://docs.rs/tlist/latest/tlist/trait.NonEmpty.html) traits.
 
 You can think of these type aliases as the type-level version of functions. Instead of normal functions, they run at compile time, on the type level:
@@ -106,4 +114,4 @@ TList's Minimum Supported Rust Version is 1.65: The implementation makes pervasi
 
 ### Dependencies
 
-The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len](https://docs.rs/tlist/latest/tlist/type.Len.html) and for type-level booleans (c.f. [IsEmpty](https://docs.rs/tlist/latest/tlist/type.IsEmpty.html)).
+The tlist is very light on dependencies. Currently it only relies on the `typenum` crate, which is used to calculate the length of a TList (c.f. [Len](https://docs.rs/tlist/latest/tlist/type.Len.html)) and for type-level booleans (c.f. [IsEmpty](https://docs.rs/tlist/latest/tlist/type.IsEmpty.html)).
