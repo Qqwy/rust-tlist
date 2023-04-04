@@ -203,6 +203,7 @@ pub type Inits<List> = <List as NonEmpty>::Inits;
 /// assert_type_eq!(Concat<TList![U2], TList![]>, TList![U2]);
 ///
 /// assert_type_eq!(Concat<TList![U1, U2], TList![U3, U4, U5]>, TList![U1, U2, U3, U4, U5]);
+/// ```
 ///
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
 
@@ -223,6 +224,18 @@ pub type Len<List> = <List as TList>::Len;
 /// You can turn the result into a `bool` using `IsEmpty<List>::BOOL` or `IsEmpty<List>::to_bool()`.
 ///
 /// (See [`typenum::Bit`].)
+/// ```rust
+/// use tlist::*;
+/// use typenum::{B0, B1, Bit};
+/// use static_assertions::assert_type_eq_all as assert_type_eq;
+///
+/// assert_type_eq!(IsEmpty<TList![]>, B1);
+/// assert_type_eq!(IsEmpty<TList![i32]>, B0);
+/// assert_type_eq!(IsEmpty<TList![u32, i64]>, B0);
+///
+/// assert_eq!(IsEmpty::<TList![]>::BOOL, true);
+/// assert_eq!(IsEmpty::<TList![&'static str]>::BOOL, false);
+/// ```
 pub type IsEmpty<List> = <List as TList>::IsEmpty;
 
 /// Constraint which only holds if a TList is a prefix of `Other`.
