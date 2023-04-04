@@ -15,7 +15,6 @@
 use core::marker::PhantomData;
 use core::ops::Add;
 
-
 pub trait TList {
     type Concat<Rhs: TList>: TList;
     type Reverse: TList;
