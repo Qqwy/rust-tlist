@@ -311,61 +311,58 @@ pub type IsEmpty<List> = <List as TList>::IsEmpty;
 /// static_assertions::assert_impl_all!(TList![U1, U2]: Prefix<TList![U1, U2, U3, U4]>);
 /// static_assertions::assert_not_impl_any!(TList![U42]: Prefix<TList![U1, U2, U3, U4]>);
 /// ```
-// pub trait Prefix<Other: TList> {}
-
-// // prefix [] _ = true
-// impl<Other: TList> Prefix<Other> for TNil {}
-
-// // prefix (h : ls) (h : rs) == prefix ls rs
-// impl<H, Ls: TList, Rs: TList> Prefix<TCons<H, Rs>> for TCons<H, Ls> where Ls: Prefix<Rs> {}
-
-// pub trait Compatible<Other: TList> {}
-// // compatible [] [] == true
-// impl Compatible<TNil> for TNil {}
-
-// // compatible [] (f : gs) == true
-// impl<F, GS: TList> Compatible<TCons<F, GS>> for TNil {}
-
-// // compatible (f : fs) [] == true
-// impl<F, FS: TList> Compatible<TNil> for TCons<F, FS> {}
-
-// // compatible (f : fs) (g : gs) == true
-// impl<F, FS: TList, GS: TList> Compatible<TCons<F, GS>> for TCons<F, FS> where FS: Compatible<GS> {}
 
 #[cfg(test)]
 pub mod tests {
     // Since all of this is type-level code,
-    // these tests run at compile-time.
+    // these tests run at compile-time :-).
     use super::*;
     use static_assertions::assert_type_eq_all as assert_type_eq;
     use typenum::consts::*;
 
-    // First:
-    assert_type_eq!(U1, First<TList![U1, U2]>);
+    #[test]
+    fn first() {
+        assert_type_eq!(U1, First<TList![U1, U2]>);
+    }
 
-    // Rest:
-    assert_type_eq!(TList![U2], Rest<TList![U1, U2]>);
+    #[test]
+    fn rest() {
+        assert_type_eq!(TList![U2], Rest<TList![U1, U2]>);
+    }
 
-    // Last:
-    assert_type_eq!(U2, Last<TList![U1, U2]>);
-    assert_type_eq!(U1, Last<TList![U1]>);
+    #[test]
+    fn last() {
+        assert_type_eq!(U2, Last<TList![U1, U2]>);
+        assert_type_eq!(U1, Last<TList![U1]>);
+    }
 
-    // Inits:
-    assert_type_eq!(TList![U1, U2], Inits<TList![U1, U2, U3]>);
-    assert_type_eq!(TList![], Inits<TList![U10]>);
+    #[test]
+    fn inits() {
+        assert_type_eq!(TList![U1, U2], Inits<TList![U1, U2, U3]>);
+        assert_type_eq!(TList![], Inits<TList![U10]>);
+    }
 
-    // Concat:
-    assert_type_eq!(TList![U1, U2, U3], Concat<TList![U1], TList![U2, U3]>);
+    #[test]
+    fn concat() {
+        assert_type_eq!(TList![U1, U2, U3], Concat<TList![U1], TList![U2, U3]>);
+    }
 
-    // Reverse:
-    assert_type_eq!(TCons<U3, TCons<U2, TCons<U1, TNil>>>, Reverse<TCons<U1, TCons<U2, TCons<U3, TNil>>>>);
+    #[test]
+    fn reverse() {
+        assert_type_eq!(TCons<U3, TCons<U2, TCons<U1, TNil>>>, Reverse<TCons<U1, TCons<U2, TCons<U3, TNil>>>>);
+    }
 
-    // // Len:
-    assert_type_eq!(U0, Len<TList![]>);
-    assert_type_eq!(U1, Len<TList![usize]>);
-    assert_type_eq!(U2, Len<TList![i32, usize]>);
+    #[test]
+    fn len() {
+        assert_type_eq!(U0, Len<TList![]>);
+        assert_type_eq!(U1, Len<TList![usize]>);
+        assert_type_eq!(U2, Len<TList![i32, usize]>);
+        assert_type_eq!(U10, Len<TList![char, char, char, char, char, char, char, char, char, char]>);
+    }
 
-    // IsEmpty:
-    assert_type_eq!(B1, IsEmpty<TList![]>);
-    assert_type_eq!(B0, IsEmpty<TList![i32]>);
+    #[test]
+    fn is_empty() {
+        assert_type_eq!(B1, IsEmpty<TList![]>);
+        assert_type_eq!(B0, IsEmpty<TList![i32]>);
+    }
 }
