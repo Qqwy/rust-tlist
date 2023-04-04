@@ -20,22 +20,32 @@ mod sealed {
 }
 use sealed::Sealed;
 
+#[doc(hidden)]
 pub trait TListImpl {
     type Last<X>;
     type Inits<X>: TList;
 }
 
+/// Type-level lists.
 pub trait TList: Sealed + TListImpl
 {
+    /// Implementation of [type@Concat].
     type Concat<Rhs: TList>: TList;
+    /// Implementation of [type@Reverse].
     type Reverse: TList;
+    /// Implementation of [type@IsEmpty].
     type IsEmpty: Bit;
 }
 
-pub trait NonEmpty: Sealed {
+/// Non-empty type-level lists.
+pub trait NonEmpty: TList + Sealed {
+    /// Implementation of [type@First].
     type First;
+    /// Implementation of [type@Rest].
     type Rest: TList;
+    /// Implementation of [type@Last].
     type Last;
+    /// Implementation of [type@Inits].
     type Inits: TList;
 }
 
@@ -143,7 +153,6 @@ pub type Last<List> = <List as NonEmpty>::Last;
 ///
 /// Only implemented for non-empty TLists.
 pub type Inits<List> = <List as NonEmpty>::Inits;
-/// Implementation of [`Inits`].
 
 /// Type-level 'function' to concatenate two TLists.
 pub type Concat<Lhs, Rhs> = <Lhs as TList>::Concat<Rhs>;
