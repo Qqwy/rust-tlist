@@ -302,7 +302,10 @@ pub type IsEmpty<List> = <List as TList>::IsEmpty;
 
 /// Constraint which only holds if a TList is a prefix of `Other`.
 ///
-/// This is not a 'function', but rather a constraint you can use to make compiler errors more readable.
+/// This is not a type-level 'function', but rather a constraint you can use to make compiler errors more readable.
+///
+/// Since this is a constraint, and only holds for a small subset of [trait@TList]s, it _is_
+/// implemented as a separate trait and not as a GAT.
 ///
 /// ```rust
 /// use tlist::*;
@@ -311,6 +314,42 @@ pub type IsEmpty<List> = <List as TList>::IsEmpty;
 /// static_assertions::assert_impl_all!(TList![U1, U2]: Prefix<TList![U1, U2, U3, U4]>);
 /// static_assertions::assert_not_impl_any!(TList![U42]: Prefix<TList![U1, U2, U3, U4]>);
 /// ```
+///
+/// Also see [EitherPrefix].
+pub trait Prefix<Other: TList> {}
+
+// prefix [] _ = true
+impl<Other: TList> Prefix<Other> for TNil {}
+
+// prefix (h : ls) (h : rs) == prefix ls rs
+impl<H, Ls: TList, Rs: TList> Prefix<TCons<H, Rs>> for TCons<H, Ls> where Ls: Prefix<Rs> {}
+
+/// Constraint which either holds if a [trait@TList] is a prefix of `Other` or if `Other` is a prefix of this [trait@TList].
+///
+/// Relaxed variant of [Prefix].
+///
+/// ```rust
+/// use tlist::*;
+/// use typenum::consts::{U1, U2, U3, U4, U42};
+///
+/// static_assertions::assert_impl_all!(TList![U1, U2]: EitherPrefix<TList![U1, U2, U3, U4]>);
+/// static_assertions::assert_impl_all!(TList![U1, U2, U3, U4]: EitherPrefix<TList![U1, U2]>);
+/// static_assertions::assert_not_impl_any!(TList![U42]: EitherPrefix<TList![U1, U2, U3, U4]>);
+/// static_assertions::assert_not_impl_any!(TList![U1, U2, U3, U4]: EitherPrefix<TList![U4, U3, U2, U1]>);
+/// ```
+pub trait EitherPrefix<Other: TList> {}
+// eitherPrefix [] [] == true
+impl EitherPrefix<TNil> for TNil {}
+
+// eitherPrefix [] (f : gs) == true
+impl<F, GS: TList> EitherPrefix<TCons<F, GS>> for TNil {}
+
+// eitherPrefix (f : fs) [] == true
+impl<F, FS: TList> EitherPrefix<TNil> for TCons<F, FS> {}
+
+// eitherPrefix (f : fs) (g : gs) == true
+impl<F, FS: TList, GS: TList> EitherPrefix<TCons<F, GS>> for TCons<F, FS> where FS: EitherPrefix<GS> {}
+
 
 #[cfg(test)]
 pub mod tests {
